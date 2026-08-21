@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Encanto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<div id="app" v-cloak>
+    <header class="topo">
+        <div class="marca">
+            <span class="marca-icone">♥</span>
+            <div>
+                <h1>Pet Encanto</h1>
+                <p>Cuidado e carinho em um só lugar</p>
+            </div>
+        </div>
+        <div class="patinhas">🐾</div>
+    </header>
+
+    <main class="container">
+        <section class="boas-vindas">
+            <div>
+                <span class="etiqueta">MEU ESPAÇO PET</span>
+                <h2>Olá! O que vamos organizar hoje?</h2>
+                <p>Cadastre tutores, acompanhe os animais e mantenha as vacinas em dia.</p>
+            </div>
+            <div class="resumo">
+                <div><strong>{{ tutores.length }}</strong><span>Tutores</span></div>
+                <div><strong>{{ animais.length }}</strong><span>Animais</span></div>
+                <div><strong>{{ vacinas.length }}</strong><span>Vacinas</span></div>
+            </div>
+        </section>
+
+        <nav class="abas">
+            <button :class="{ ativa: aba === 'tutores' }" @click="mudarAba('tutores')">♡ Tutores</button>
+            <button :class="{ ativa: aba === 'animais' }" @click="mudarAba('animais')">🐾 Animais</button>
+            <button :class="{ ativa: aba === 'vacinas' }" @click="mudarAba('vacinas')">✦ Vacinas</button>
+        </nav>
+
+        <p v-if="mensagem" class="mensagem" :class="tipoMensagem">{{ mensagem }}</p>
+
+        <section v-if="aba === 'tutores'" class="conteudo">
+            <div class="cartao formulario">
+                <h3>{{ tutorForm.id ? 'Editar tutor' : 'Novo tutor' }}</h3>
+                <form @submit.prevent="salvarTutor">
+                    <label>Nome</label>
+                    <input v-model="tutorForm.nome" required maxlength="100" placeholder="Nome do tutor">
+                    <label>Telefone</label>
+                    <input v-model="tutorForm.telefone" maxlength="20" placeholder="(00) 00000-0000">
+                    <div class="acoes-form">
+                        <button class="botao principal" type="submit">{{ tutorForm.id ? 'Salvar alterações' : 'Cadastrar' }}</button>
+                        <button v-if="tutorForm.id" class="botao secundario" type="button" @click="limparTutor">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="cartao lista">
+                <div class="titulo-lista"><h3>Tutores cadastrados</h3><span>{{ tutores.length }} registro(s)</span></div>
+                <div v-if="!tutores.length" class="vazio">Nenhum tutor cadastrado ainda.</div>
+                <article v-for="tutor in tutores" :key="tutor.id" class="item">
+                    <div class="avatar">{{ inicial(tutor.nome) }}</div>
+                    <div class="dados"><strong>{{ tutor.nome }}</strong><span>{{ tutor.telefone || 'Sem telefone' }}</span></div>
+                    <div class="acoes"><button @click="editarTutor(tutor)">Editar</button><button class="excluir" @click="excluir('tutores', tutor.id)">Excluir</button></div>
+                </article>
+            </div>
+        </section>
+
+        <section v-if="aba === 'animais'" class="conteudo">
+            <div class="cartao formulario">
+                <h3>{{ animalForm.id ? 'Editar animal' : 'Novo animal' }}</h3>
+                <form @submit.prevent="salvarAnimal">
+                    <label>Nome</label>
+                    <input v-model="animalForm.nome" required maxlength="100" placeholder="Nome do animal">
+                    <div class="linha">
+                        <div><label>Raça</label><input v-model="animalForm.raca" maxlength="100" placeholder="Raça"></div>
+                        <div><label>Idade</label><input v-model.number="animalForm.idade" type="number" min="0" placeholder="Anos"></div>
+                    </div>
+                    <label>Saúde</label>
+                    <textarea v-model="animalForm.saude" maxlength="255" placeholder="Observações sobre a saúde"></textarea>
+                    <label>Tutor</label>
+                    <select v-model="animalForm.tutorId" required>
+                        <option disabled value="">Selecione um tutor</option>
+                        <option v-for="tutor in tutores" :key="tutor.id" :value="tutor.id">{{ tutor.nome }}</option>
+                    </select>
+                    <small v-if="!tutores.length">Cadastre um tutor primeiro.</small>
+                    <div class="acoes-form">
+                        <button class="botao principal" type="submit" :disabled="!tutores.length">{{ animalForm.id ? 'Salvar alterações' : 'Cadastrar' }}</button>
+                        <button v-if="animalForm.id" class="botao secundario" type="button" @click="limparAnimal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="cartao lista">
+                <div class="titulo-lista"><h3>Animais cadastrados</h3><span>{{ animais.length }} registro(s)</span></div>
+                <div v-if="!animais.length" class="vazio">Nenhum animal cadastrado ainda.</div>
+                <article v-for="animal in animais" :key="animal.id" class="item">
+                    <div class="avatar animal">🐾</div>
+                    <div class="dados"><strong>{{ animal.nome }}</strong><span>{{ animal.raca || 'Sem raça' }} · {{ animal.idade ?? '—' }} ano(s)</span><small>Tutor: {{ animal.tutor?.nome }}</small></div>
+                    <div class="acoes"><button @click="editarAnimal(animal)">Editar</button><button class="excluir" @click="excluir('animais', animal.id)">Excluir</button></div>
+                </article>
+            </div>
+        </section>
+
+        <section v-if="aba === 'vacinas'" class="conteudo">
+            <div class="cartao formulario">
+                <h3>{{ vacinaForm.id ? 'Editar vacina' : 'Nova vacina' }}</h3>
+                <form @submit.prevent="salvarVacina">
+                    <label>Nome da vacina</label>
+                    <input v-model="vacinaForm.nome" required maxlength="100" placeholder="Ex.: Antirrábica">
+                    <label>Data da aplicação</label>
+                    <input v-model="vacinaForm.dataVacina" type="date">
+                    <label>Animal</label>
+                    <select v-model="vacinaForm.animalId" required>
+                        <option disabled value="">Selecione um animal</option>
+                        <option v-for="animal in animais" :key="animal.id" :value="animal.id">{{ animal.nome }}</option>
+                    </select>
+                    <small v-if="!animais.length">Cadastre um animal primeiro.</small>
+                    <div class="acoes-form">
+                        <button class="botao principal" type="submit" :disabled="!animais.length">{{ vacinaForm.id ? 'Salvar alterações' : 'Cadastrar' }}</button>
+                        <button v-if="vacinaForm.id" class="botao secundario" type="button" @click="limparVacina">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="cartao lista">
+                <div class="titulo-lista"><h3>Vacinas registradas</h3><span>{{ vacinas.length }} registro(s)</span></div>
+                <div v-if="!vacinas.length" class="vazio">Nenhuma vacina registrada ainda.</div>
+                <article v-for="vacina in vacinas" :key="vacina.id" class="item">
+                    <div class="avatar vacina">✦</div>
+                    <div class="dados"><strong>{{ vacina.nome }}</strong><span>{{ formatarData(vacina.dataVacina) }}</span><small>Animal: {{ vacina.animal?.nome }}</small></div>
+                    <div class="acoes"><button @click="editarVacina(vacina)">Editar</button><button class="excluir" @click="excluir('vacinas', vacina.id)">Excluir</button></div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>Feito com carinho para cuidar de quem faz parte da família ♥</footer>
+</div>
+
+<script type="module" src="/src/app.js"></script>
+</body>
+</html>
